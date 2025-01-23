@@ -15,6 +15,9 @@ public:
 	// Sets default values for this actor's properties
 	AInteractableObject();
 
+	UFUNCTION(BlueprintNativeEvent, Category = "Interaction")
+	void InteractAbility();
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -26,6 +29,4 @@ protected:
 	// Overlap event
 	UFUNCTION()
 	void OnOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-	UFUNCTION(BlueprintNativeEvent, Category = "Interaction")
-	void InteractAbility();
 };

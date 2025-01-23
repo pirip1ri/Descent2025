@@ -7,6 +7,8 @@
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "InteractableObject.h"
+#include "DescentSaveGame.h"
+#include <Kismet/GameplayStatics.h>
 
 ADescentPlayerCharacter::ADescentPlayerCharacter()
 {
@@ -101,20 +103,23 @@ void ADescentPlayerCharacter::StopCrouch()
 
 void ADescentPlayerCharacter::InteractWithObject()
 {
-    // Perform a line trace or check nearby objects
-    FHitResult HitResult;
-    FVector Start = GetActorLocation();
-    FVector End = Start + (GetActorForwardVector() * 200.f);
-
-    FCollisionQueryParams Params;
-    Params.AddIgnoredActor(this);
-
-    if (GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility, Params))
+    if (Controller != nullptr)
     {
-        AInteractableObject* Interactable = Cast<AInteractableObject>(HitResult.Actor);
-        if (Interactable)
+        // Perform a line trace or check nearby objects
+        FHitResult HitResult;
+        FVector Start = GetActorLocation(); // Start of the line trace is where the player is
+        FVector End = Start + (GetActorForwardVector() * 200.f); // End point = 200m away from Start point in the direction the player is looking in
+
+        FCollisionQueryParams Params;
+        Params.AddIgnoredActor(this); // ignore self
+
+        if (GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility, Params)) // Is there something nearby?
         {
-            Interactable->InteractAbility();
+            AInteractableObject* Interactable = Cast<AInteractableObject>(HitResult.GetActor()); // Is that something an interactable object?
+            if (Interactable) // If so, interact with it
+            {
+                Interactable->InteractAbility();
+            }
         }
     }
 }
@@ -131,4 +136,27 @@ void ADescentPlayerCharacter::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
 
+}
+
+void ADescentPlayerCharacter::SaveGame()
+{
+    // Create an instance of the save
+    UDescentSaveGame* SaveGameInstance = Cast<UDescentSaveGame>(UGameplayStatics::CreateSaveGameObject(UDescentSaveGame::StaticClass()));
+
+    // Get information about the player in that instance
+    SaveGameInstance->PlayerLocation = GetActorLocation();
+    SaveGameInstance->PlayerRotation = GetActorRotation();
+
+    // Create slot for loadout
+    UGameplayStatics::SaveGameToSlot(SaveGameInstance, "UpdatedCheckpoint", 0);
+}
+
+void ADescentPlayerCharacter::LoadGame()
+{
+    UDescentSaveGame* LoadGameInstance = Cast<UDescentSaveGame>(UGameplayStatics::LoadGameFromSlot("UpdatedCheckpoint", 0));
+    if (LoadGameInstance)
+    {
+        SetActorLocation(LoadGameInstance->PlayerLocation);
+        SetActorRotation(LoadGameInstance->PlayerRotation);
+    }
 }

@@ -15,7 +15,7 @@ AInteractableObject::AInteractableObject()
     RootComponent = InteractionSphere;
 
     // Bind the overlap event
-    InteractionSphere->OnComponentBeginOverlap.AddDynamic(this, &ABaseInteractable::OnOverlapBegin);
+    InteractionSphere->OnComponentBeginOverlap.AddDynamic(this, &AInteractableObject::OnOverlapBegin);
 
 }
 
@@ -31,7 +31,7 @@ void AInteractableObject::OnOverlapBegin(UPrimitiveComponent* OverlappedComponen
     ADescentPlayerCharacter* PlayerCharacter = Cast<ADescentPlayerCharacter>(OtherActor);
     if (PlayerCharacter)
     {
-        UE_LOG(LogTemp, Display, TEXT("Can Interact with Object!"));
+        // UI/HUD functionality
     }
 }
 

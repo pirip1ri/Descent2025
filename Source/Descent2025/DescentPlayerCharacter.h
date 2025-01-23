@@ -55,6 +55,8 @@ public:
 	/** Returns FirstPersonCameraComponent subobject **/
 	UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCamera; }
 
+	void SaveGame();
+	void LoadGame();
 private:
 	bool bIsSprinting = false;
 };

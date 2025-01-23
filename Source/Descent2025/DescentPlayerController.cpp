@@ -45,8 +45,6 @@ void ADescentPlayerController::SetupInputComponent()
     }
 }
 
-
-
 void ADescentPlayerController::MoveForward(const FInputActionValue& Value)
 {
     if (ADescentPlayerCharacter* DescentCharacter = Cast<ADescentPlayerCharacter>(GetPawn()))
@@ -117,6 +115,6 @@ void ADescentPlayerController::InteractWithObject()
 {
     if (ADescentPlayerCharacter* DescentCharacter = Cast<ADescentPlayerCharacter>(GetPawn()))
     {
-        DescentCharacter->InteractWithObject();
+        DescentCharacter->InteractWithObject(); 
     }
 }
