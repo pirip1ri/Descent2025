@@ -40,6 +40,9 @@ private:
     UPROPERTY(EditDefaultsOnly, Category = "Input")
     UInputAction* CrouchAction;
 
+    UPROPERTY(EditDefaultsOnly, Category = "Input")
+    UInputAction* InteractAction;
+
     // Input Action Functions
     void MoveForward(const FInputActionValue& Value);
     void MoveRight(const FInputActionValue& Value);
@@ -47,4 +50,5 @@ private:
     void Turn(const FInputActionValue& Value);
     void StartSprint(const FInputActionValue& Value);
     void StartCrouch(const FInputActionValue& Value);
+    void InteractWithObject();
 };

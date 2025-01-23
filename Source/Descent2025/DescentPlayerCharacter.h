@@ -29,6 +29,7 @@ public:
 	void StopSprint();
 	void StartCrouch();
 	void StopCrouch();
+	void InteractWithObject();
 
 protected:
 	// Called when the game starts or when spawned

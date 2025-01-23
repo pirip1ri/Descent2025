@@ -39,6 +39,9 @@ void ADescentPlayerController::SetupInputComponent()
         // Bind Crouch
         EnhancedInput->BindAction(CrouchAction, ETriggerEvent::Started, this, &ADescentPlayerController::StartCrouch);
         EnhancedInput->BindAction(CrouchAction, ETriggerEvent::Completed, this, &ADescentPlayerController::StartCrouch);
+
+        // Bind Interact
+        EnhancedInput->BindAction(InteractAction, ETriggerEvent::Triggered, this, &ADescentPlayerController::InteractWithObject);
     }
 }
 
@@ -107,5 +110,13 @@ void ADescentPlayerController::StartCrouch(const FInputActionValue& Value)
         {
             DescentCharacter->StopCrouch();
         }
+    }
+}
+
+void ADescentPlayerController::InteractWithObject()
+{
+    if (ADescentPlayerCharacter* DescentCharacter = Cast<ADescentPlayerCharacter>(GetPawn()))
+    {
+        DescentCharacter->InteractWithObject();
     }
 }

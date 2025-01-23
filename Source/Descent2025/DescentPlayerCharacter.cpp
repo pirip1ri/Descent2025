@@ -6,6 +6,7 @@
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "InteractableObject.h"
 
 ADescentPlayerCharacter::ADescentPlayerCharacter()
 {
@@ -95,6 +96,26 @@ void ADescentPlayerCharacter::StopCrouch()
     if (Controller != nullptr)
     {
         UnCrouch();
+    }
+}
+
+void ADescentPlayerCharacter::InteractWithObject()
+{
+    // Perform a line trace or check nearby objects
+    FHitResult HitResult;
+    FVector Start = GetActorLocation();
+    FVector End = Start + (GetActorForwardVector() * 200.f);
+
+    FCollisionQueryParams Params;
+    Params.AddIgnoredActor(this);
+
+    if (GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility, Params))
+    {
+        AInteractableObject* Interactable = Cast<AInteractableObject>(HitResult.Actor);
+        if (Interactable)
+        {
+            Interactable->InteractAbility();
+        }
     }
 }
 
