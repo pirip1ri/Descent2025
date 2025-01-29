@@ -72,3 +72,6 @@ Plugins/*/Intermediate/*
 
 # Cache files for the editor to use
 DerivedDataCache/*
+Content/AI/Sensors_Alarms/BP_Alarm.uasset
+Content/__ExternalActors__/FirstPerson/Maps/FirstPersonMap/D/YI/LAQEG8N9XS27N3GJEEJWH2.uasset
+Content/__ExternalActors__/FirstPerson/Maps/FirstPersonMap/8/D0/C6PPVTJH6856A3LSOR6WW6.uasset
