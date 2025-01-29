@@ -43,6 +43,9 @@ private:
     UPROPERTY(EditDefaultsOnly, Category = "Input")
     UInputAction* InteractAction;
 
+    UPROPERTY(EditDefaultsOnly, Category = "Input")
+    UInputAction* PauseAction;
+
     // Input Action Functions
     void MoveForward(const FInputActionValue& Value);
     void MoveRight(const FInputActionValue& Value);
@@ -51,4 +54,9 @@ private:
     void StartSprint(const FInputActionValue& Value);
     void StartCrouch(const FInputActionValue& Value);
     void InteractWithObject();
+
+    // Pause the game
+    void TogglePause();
+    // Helper function to set input mode
+    void SetInputModeForPause(bool bIsPaused);
 };

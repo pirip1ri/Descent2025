@@ -2,9 +2,12 @@
 
 
 #include "DescentPlayerController.h"
+#include "Kismet/GameplayStatics.h"
 #include "DescentPlayerCharacter.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "DescentGameModeBase.h"
+#include "DescentGameStateBase.h"
 
 void ADescentPlayerController::BeginPlay()
 {
@@ -42,6 +45,9 @@ void ADescentPlayerController::SetupInputComponent()
 
         // Bind Interact
         EnhancedInput->BindAction(InteractAction, ETriggerEvent::Triggered, this, &ADescentPlayerController::InteractWithObject);
+    
+        // Bind the pause action
+        EnhancedInput->BindAction(PauseAction, ETriggerEvent::Started, this, &ADescentPlayerController::TogglePause);
     }
 }
 
@@ -116,5 +122,35 @@ void ADescentPlayerController::InteractWithObject()
     if (ADescentPlayerCharacter* DescentCharacter = Cast<ADescentPlayerCharacter>(GetPawn()))
     {
         DescentCharacter->InteractWithObject(); 
+    }
+}
+
+void ADescentPlayerController::TogglePause()
+{
+    // Get the current game mode
+    ADescentGameModeBase* GameMode = Cast<ADescentGameModeBase>(UGameplayStatics::GetGameMode(this));
+    if (!GameMode)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("TogglePause: Could not find DescentGameModeBase"));
+        return;
+    }
+
+    // Use the GameMode's functionality to toggle the pause menu
+    GameMode->ChangeGameState(EGameState::Paused);
+}
+
+void ADescentPlayerController::SetInputModeForPause(bool bIsPaused)
+{
+    if (bIsPaused)
+    {
+        // Set input mode for UI and show mouse cursor
+        SetInputMode(FInputModeUIOnly());
+        bShowMouseCursor = true;
+    }
+    else
+    {
+        // Set input mode for gameplay and hide mouse cursor
+        SetInputMode(FInputModeGameOnly());
+        bShowMouseCursor = false;
     }
 }

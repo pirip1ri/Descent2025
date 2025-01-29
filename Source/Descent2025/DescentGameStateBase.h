@@ -12,10 +12,12 @@ enum class EGameState : uint8
     StartMenu,
     Playing,
     Paused,
+    Settings,
     GameOver,
     GameWin,
     Loading,
-    Checkpoint
+    Checkpoint,
+    None
 };
 
 UCLASS()
@@ -27,7 +29,7 @@ public:
     ADescentGameStateBase();
 
     UPROPERTY(BlueprintReadOnly, Category = "Game State")
-    EGameState CurrentState;
+    EGameState CurrentState = EGameState::None;
 
     UFUNCTION(BlueprintCallable, Category = "Game State")
     void SetGameState(EGameState NewState);
