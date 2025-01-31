@@ -26,23 +26,7 @@ void ADescentGameModeBase::ChangeGameState(EGameState NewState)
 	// Update the game state, even if it's the same
 	GameStateRef->SetGameState(NewState);
 
-	// Check no widgets are in viewport, and if they are, remove from viewport and remove to help memory management
-	if (MainMenuWidget && MainMenuWidget->IsInViewport())
-	{
-		MainMenuWidget->RemoveFromParent();
-		MainMenuWidget = nullptr;
-	}
-	if (PauseMenuWidget && PauseMenuWidget->IsInViewport())
-	{
-		PauseMenuWidget->RemoveFromParent();
-		bIsPaused = false;
-		PauseMenuWidget = nullptr;
-	}
-	if (GameOverWidget && GameOverWidget->IsInViewport())
-	{
-		GameOverWidget->RemoveFromParent();
-		GameOverWidget = nullptr;
-	}
+	RemoveAllMenusFromViewport();
 
 	// Check what the new game state is, and call the required function
 	switch (NewState)
@@ -54,6 +38,8 @@ void ADescentGameModeBase::ChangeGameState(EGameState NewState)
 	case EGameState::Paused: SetGameToPause(); break;
 	
 	case EGameState::Loading: SetGameToLoad(); break;
+
+	case EGameState::Settings: SetGameToSettings(); break;
 	
 	case EGameState::GameOver: SetGameToGameOver(); break;
 	
@@ -201,6 +187,49 @@ void ADescentGameModeBase::DisplayGameOverMenu()
 	}
 }
 
+void ADescentGameModeBase::DisplaySettingsMenuWidget()
+{
+	UE_LOG(LogTemp, Warning, TEXT("void ADescentGameModeBase::DisplaySettingsMenuWidget()"));
+	// Check there is a pause menu template
+	if (!SettingsMenuWidgetTemplate)
+	{
+		UE_LOG(LogTemp, Display, TEXT("void ADescentGameModeBase::DisplaySettingsMenuWidget() no widget set"));
+		return;
+	}
+
+	ADescentPlayerController* PlayerController = GetDescentPlayerController();
+	if (!PlayerController)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ADescentGameModeBase::DisplaySettingsMenuWidget() Failed to get PlayerController"));
+		return;
+	}
+
+	// Create and display the settings menu
+	if (!SettingsWidget)
+	{
+		if (PlayerController)
+		{
+			SettingsWidget = CreateWidget<UUserWidget>(PlayerController, SettingsMenuWidgetTemplate);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Failed to get PlayerController for widget ownership!"));
+			return;
+		}
+	}
+
+	if (SettingsWidget && !SettingsWidget->IsInViewport())
+	{
+		SettingsWidget->AddToViewport();
+	}
+
+	PlayerController->SetPause(true);
+	FInputModeUIOnly InputMode;
+	InputMode.SetWidgetToFocus(SettingsWidget->TakeWidget());
+	PlayerController->SetInputMode(InputMode);
+	PlayerController->bShowMouseCursor = true;
+}
+
 void ADescentGameModeBase::BeginPlay()
 {
 	Super::BeginPlay();
@@ -268,6 +297,25 @@ void ADescentGameModeBase::SetGameToPause()
 	ToggleDisplayPauseMenuWidget();
 }
 
+void ADescentGameModeBase::SetGameToSettings()
+{
+	UE_LOG(LogTemp, Warning, TEXT("void ADescentGameModeBase::SetGameToSettings()"));
+	UGameplayStatics::SetGamePaused(GetWorld(), true);
+
+	ADescentPlayerController* PlayerController = GetDescentPlayerController();
+	if (PlayerController)
+	{
+		PlayerController->SetInputMode(FInputModeUIOnly());
+		PlayerController->bShowMouseCursor = true;
+	}
+	else
+	{
+		UE_LOG(LogTemp, Display, TEXT("void ADescentGameModeBase::SetGameToPause() failed to cast the player controller"));
+		return;
+	}
+	DisplaySettingsMenuWidget();
+}
+
 void ADescentGameModeBase::SetGameToLoad()
 {
 	// Loading mechanics
@@ -296,7 +344,7 @@ ADescentPlayerController* ADescentGameModeBase::GetDescentPlayerController() con
 void ADescentGameModeBase::RemoveAllMenusFromViewport()
 {
 	// Store all possible menus in an array
-	TArray<UUserWidget*> WidgetsToRemove = { MainMenuWidget, PauseMenuWidget, GameOverWidget };
+	TArray<UUserWidget*> WidgetsToRemove = { MainMenuWidget, PauseMenuWidget, GameOverWidget, SettingsWidget };
 
 	// Loop through and remove each if it's valid and in the viewport
 	for (UUserWidget*& Widget : WidgetsToRemove)

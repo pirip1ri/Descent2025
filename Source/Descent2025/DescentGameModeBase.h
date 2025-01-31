@@ -28,10 +28,13 @@ public:
     TSubclassOf<class UUserWidget> PauseMenuWidgetTemplate;
     UPROPERTY(EditDefaultsOnly, Category = "UI")
     TSubclassOf<class UUserWidget> GameOverWidgetTemplate;
+    UPROPERTY(EditDefaultsOnly, Category = "UI")
+    TSubclassOf<class UUserWidget> SettingsMenuWidgetTemplate;
     
     void DisplayMainMenuWidget();
     void ToggleDisplayPauseMenuWidget();
     void DisplayGameOverMenu();
+    void DisplaySettingsMenuWidget();
 
 protected:
     virtual void BeginPlay() override;
@@ -40,6 +43,7 @@ protected:
 
     void SetGameToPlay();
     void SetGameToPause();
+    void SetGameToSettings();
     void SetGameToLoad();
     void SetGameToGameOver();
     void SetGameToGameWin();
@@ -55,6 +59,8 @@ private:
     UUserWidget* PauseMenuWidget;
     UPROPERTY()
     UUserWidget* GameOverWidget;
+    UPROPERTY()
+    UUserWidget* SettingsWidget;
 
     ADescentPlayerController* GetDescentPlayerController() const;
 
