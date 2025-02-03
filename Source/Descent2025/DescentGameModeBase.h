@@ -36,6 +36,20 @@ public:
     void DisplayGameOverMenu();
     void DisplaySettingsMenuWidget();
 
+    // Getters
+    FVector GetInitialSpawnLocation() const { return InitialSpawnLocation; }
+    FRotator GetInitialSpawnRotation() const { return InitialSpawnRotation; }
+    FString GetInitialLevelName() const { return InitialLevelName; }
+
+    UPROPERTY(BlueprintReadOnly, Category = "UI")
+    float VolumeValue = 1.0f;
+    UFUNCTION(BlueprintCallable, Category = "UI")
+    void SetVolumeValue(float NewVolume) { VolumeValue = NewVolume; }
+    UPROPERTY(BlueprintReadOnly, Category = "UI")
+    float BrightnessValue = 1.0f;
+    UFUNCTION(BlueprintCallable, Category = "UI")
+    void SetBrightnessValue(float NewBrightness) { BrightnessValue = NewBrightness; }
+
 protected:
     virtual void BeginPlay() override;
 
@@ -51,6 +65,8 @@ protected:
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Levels")
     FName MainMenuLevelName = "MainMenuLevel";
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Levels")
+    FString InitialLevelName = "StartingLevel"; // Set your actual starting level name
 private:
     /** Reference to the main menu widget */
     UPROPERTY()
@@ -68,4 +84,9 @@ private:
 
     void StartGame();
     bool bIsPaused;
+
+    void RegisterInitialSpawn(AActor* PlayerActor);
+
+    FVector InitialSpawnLocation;
+    FRotator InitialSpawnRotation;
 };

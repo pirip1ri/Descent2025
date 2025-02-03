@@ -2,6 +2,7 @@
 
 
 #include "DescentGameModeBase.h"
+#include "DescentPlayerCharacter.h"
 #include "Kismet/GameplayStatics.h"
 #include "Blueprint/UserWidget.h"
 
@@ -264,6 +265,17 @@ void ADescentGameModeBase::SetGameToPlay()
 {
 	UGameplayStatics::SetGamePaused(GetWorld(), false);
 
+	ADescentPlayerCharacter* PlayerCharacter = Cast<ADescentPlayerCharacter>(GetWorld()->GetFirstPlayerController()->GetPawn());
+	if (PlayerCharacter)
+	{
+		RegisterInitialSpawn(PlayerCharacter);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Display, TEXT("ADescentGameModeBase::SetGameToPlay() No Player Character to Register their initial spawns!"));
+	}
+
+
 	// Set input mode to Play
 	ADescentPlayerController* PlayerController = GetDescentPlayerController();
 	if (PlayerController)
@@ -318,7 +330,20 @@ void ADescentGameModeBase::SetGameToSettings()
 
 void ADescentGameModeBase::SetGameToLoad()
 {
-	// Loading mechanics
+	ADescentPlayerCharacter* PlayerCharacter = Cast<ADescentPlayerCharacter>(GetWorld()->GetFirstPlayerController()->GetPawn());
+	if (PlayerCharacter)
+	{
+		PlayerCharacter->LoadGame();
+		UE_LOG(LogTemp, Display, TEXT("Game loaded from checkpoint!"));
+
+		// If loading was successful, transition back to Playing state
+		ChangeGameState(EGameState::Playing);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Failed to load checkpoint: No player character found!"));
+		ChangeGameState(EGameState::Playing);
+	}
 }
 
 void ADescentGameModeBase::SetGameToGameOver()
@@ -333,7 +358,19 @@ void ADescentGameModeBase::SetGameToGameWin()
 
 void ADescentGameModeBase::SetCheckpoint()
 {
-	// Checkpoint mechanics
+	ADescentPlayerCharacter* PlayerCharacter = Cast<ADescentPlayerCharacter>(GetWorld()->GetFirstPlayerController()->GetPawn());
+	if (PlayerCharacter)
+	{
+		PlayerCharacter->SaveGame();
+		UE_LOG(LogTemp, Display, TEXT("Checkpoint saved!"));
+
+		// If saving was successful, transition back to Playing state
+		ChangeGameState(EGameState::Playing);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Failed to save checkpoint: No player character found!"));
+	}	
 }
 
 ADescentPlayerController* ADescentGameModeBase::GetDescentPlayerController() const
@@ -372,4 +409,15 @@ void ADescentGameModeBase::StartGame()
 
 	// Transition to gameplay
 	UGameplayStatics::OpenLevel(GetWorld(), "Level1"); /* REPLACE THIS */
+}
+
+void ADescentGameModeBase::RegisterInitialSpawn(AActor* PlayerActor)
+{
+	if (!PlayerActor) return;
+
+	if (InitialSpawnLocation.IsZero()) // Only set once
+	{
+		InitialSpawnLocation = PlayerActor->GetActorLocation();
+		InitialSpawnRotation = PlayerActor->GetActorRotation();
+	}
 }

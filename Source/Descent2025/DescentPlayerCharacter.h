@@ -46,6 +46,9 @@ protected:
 	float WalkSpeed;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement")
 	float SprintSpeed;
+
+	UPROPERTY(BlueprintReadWrite, Category = "Player Stats")
+	int32 CurrentHealth;
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
