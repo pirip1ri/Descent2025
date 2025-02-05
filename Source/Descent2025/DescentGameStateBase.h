@@ -29,10 +29,16 @@ public:
     ADescentGameStateBase();
 
     UPROPERTY(BlueprintReadOnly, Category = "Game State")
+    EGameState PreviousState = EGameState::None;
+
+    UFUNCTION(BlueprintCallable, Category = "Game State")
+    void SetPreviousGameState(EGameState NewPreviousState) { PreviousState = NewPreviousState; }
+
+    UPROPERTY(BlueprintReadOnly, Category = "Game State")
     EGameState CurrentState = EGameState::None;
 
     UFUNCTION(BlueprintCallable, Category = "Game State")
-    void SetGameState(EGameState NewState);
+    void SetGameState(EGameState NewState) { CurrentState = NewState; }
 
     UFUNCTION(BlueprintCallable, Category = "Game State")
     EGameState GetGameState() const { return CurrentState; }

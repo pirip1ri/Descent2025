@@ -8,8 +8,3 @@ ADescentGameStateBase::ADescentGameStateBase()
 	// Initialize the state to StartMenu
 	CurrentState = EGameState::StartMenu;
 }
-
-void ADescentGameStateBase::SetGameState(EGameState NewState)
-{
-	CurrentState = NewState;
-}

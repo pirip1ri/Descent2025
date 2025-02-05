@@ -15,8 +15,8 @@ class DESCENT2025_API UDescentSaveGame : public USaveGame
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(BlueprintReadWrite, Category = "Save Data")
-	FString SavedLevelName;
+	UPROPERTY()
+	TArray<FString> ActiveSublevels;
 
 	UPROPERTY(BlueprintReadWrite, Category = "Save Data")
 	FVector PlayerLocation;

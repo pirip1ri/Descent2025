@@ -6,6 +6,9 @@
 #include "GameFramework/Actor.h"
 #include "InteractableObject.generated.h"
 
+class UUserWidget;
+class UWidgetComponent;
+
 UCLASS()
 class DESCENT2025_API AInteractableObject : public AActor
 {
@@ -18,6 +21,14 @@ public:
 	UFUNCTION(BlueprintNativeEvent, Category = "Interaction")
 	void InteractAbility();
 
+	// Interaction Text
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction")
+	FString InteractionText;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction")
+	FString AlternativeInteractionText;
+	// Custom Widget
+	UPROPERTY(EditAnywhere, Category = "Components")
+	UWidgetComponent* InteractionWidget;
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -26,7 +37,15 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Interaction")
 	class USphereComponent* InteractionSphere;
 
+	UFUNCTION(BlueprintCallable, Category = "Interaction")
+	void ChangeTextToAlternativeText();
+
+	UFUNCTION(BlueprintCallable, Category = "Interaction")
+	void SetNewAlternativeText(FString String) { AlternativeInteractionText = String; }
+private:
 	// Overlap event
 	UFUNCTION()
 	void OnOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	UFUNCTION()
+	void OnOverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 };

@@ -10,6 +10,7 @@ ADescentGameModeBase::ADescentGameModeBase()
 {
 	// Set the default Game State class as the one we made
 	GameStateClass = ADescentGameStateBase::StaticClass();
+
 }
 
 void ADescentGameModeBase::ChangeGameState(EGameState NewState)
@@ -234,6 +235,15 @@ void ADescentGameModeBase::DisplaySettingsMenuWidget()
 void ADescentGameModeBase::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (FadeToFromBlackWidgetTemplate)
+	{
+		FadeToFromBlackWidget = CreateWidget<UUserWidget>(GetWorld(), FadeToFromBlackWidgetTemplate);
+		if (FadeToFromBlackWidget)
+		{
+			FadeToFromBlackWidget->AddToViewport();
+		}
+	}
 
 	// Ensure we are setting the correct state based on the loaded level
 	FString CurrentLevel = UGameplayStatics::GetCurrentLevelName(GetWorld());

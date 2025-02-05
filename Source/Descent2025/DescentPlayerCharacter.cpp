@@ -9,6 +9,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "InteractableObject.h"
 #include "DescentSaveGame.h"
+#include "Engine/LevelStreaming.h"
 #include <Kismet/GameplayStatics.h>
 
 ADescentPlayerCharacter::ADescentPlayerCharacter()
@@ -142,20 +143,27 @@ void ADescentPlayerCharacter::Tick(float DeltaTime)
 
 void ADescentPlayerCharacter::SaveGame()
 {
-    // Create an instance of the save game
     UDescentSaveGame* SaveGameInstance = Cast<UDescentSaveGame>(UGameplayStatics::CreateSaveGameObject(UDescentSaveGame::StaticClass()));
-
-    // Ensure instance is valid
     if (!SaveGameInstance) return;
 
-    // Get and store player location, rotation, and health
+    // Store player data
     SaveGameInstance->PlayerLocation = GetActorLocation();
     SaveGameInstance->PlayerRotation = GetActorRotation();
-    //SaveGameInstance->PlayerHealth = CurrentHealth; 
 
-    // Get and store the current level name
-    SaveGameInstance->SavedLevelName = GetWorld()->GetMapName();
-    SaveGameInstance->SavedLevelName.RemoveFromStart(GetWorld()->StreamingLevelsPrefix); // Remove prefix "UEDPIE_"
+    // Ensure world is valid
+    UWorld* World = GetWorld();
+    if (World)
+    {
+        SaveGameInstance->ActiveSublevels.Empty(); // Clear previous entries
+
+        for (ULevelStreaming* StreamingLevel : World->GetStreamingLevels())
+        {
+            if (StreamingLevel && StreamingLevel->IsLevelVisible())
+            {
+                SaveGameInstance->ActiveSublevels.Add(StreamingLevel->GetWorldAssetPackageName());
+            }
+        }
+    }
 
     // Save to slot
     UGameplayStatics::SaveGameToSlot(SaveGameInstance, "UpdatedCheckpoint", 0);
@@ -167,25 +175,33 @@ void ADescentPlayerCharacter::LoadGame()
 
     if (LoadGameInstance)
     {
-        FString CurrentLevel = GetWorld()->GetMapName();
-        CurrentLevel.RemoveFromStart(GetWorld()->StreamingLevelsPrefix); // Remove prefix "UEDPIE_"
-
-        // If the saved level is different from the current level, load the correct level
-        if (LoadGameInstance->SavedLevelName != CurrentLevel)
+        UWorld* World = GetWorld();
+        if (World)
         {
-            UE_LOG(LogTemp, Display, TEXT("Loading saved level: %s"), *LoadGameInstance->SavedLevelName);
-            UGameplayStatics::OpenLevel(this, FName(LoadGameInstance->SavedLevelName));
+            // First, unload all existing sublevels
+            for (ULevelStreaming* StreamingLevel : World->GetStreamingLevels())
+            {
+                if (StreamingLevel)
+                {
+                    StreamingLevel->SetShouldBeVisible(false);
+                }
+            }
 
-            SetActorLocation(LoadGameInstance->PlayerLocation);
-            SetActorRotation(LoadGameInstance->PlayerRotation);
-            //CurrentHealth = LoadGameInstance->PlayerHealth;
+            // Then, load the saved sublevels
+            for (const FString& SublevelName : LoadGameInstance->ActiveSublevels)
+            {
+                UGameplayStatics::LoadStreamLevel(World, FName(*SublevelName), true, true, FLatentActionInfo());
+            }
         }
-        else
+
+        // Restore player position and rotation
+        SetActorLocation(LoadGameInstance->PlayerLocation);
+        SetActorRotation(LoadGameInstance->PlayerRotation);
+
+        APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
+        if (PlayerController)
         {
-            // If we're already in the right level, just move the player
-            SetActorLocation(LoadGameInstance->PlayerLocation);
-            SetActorRotation(LoadGameInstance->PlayerRotation);
-            //CurrentHealth = LoadGameInstance->PlayerHealth;
+            PlayerController->SetControlRotation(LoadGameInstance->PlayerRotation);
         }
     }
     else
@@ -196,7 +212,6 @@ void ADescentPlayerCharacter::LoadGame()
         ADescentGameModeBase* GameMode = Cast<ADescentGameModeBase>(GetWorld()->GetAuthGameMode());
         if (GameMode)
         {
-            // Load the initial level if needed
             FString InitialLevelName = GameMode->GetInitialLevelName(); // Make sure GameMode has this function
             FString CurrentLevel = GetWorld()->GetMapName();
             CurrentLevel.RemoveFromStart(GetWorld()->StreamingLevelsPrefix);
@@ -208,8 +223,26 @@ void ADescentPlayerCharacter::LoadGame()
             }
             else
             {
-                // If we're already in the correct level, set the player's initial spawn position
+                // Load the necessary sublevels for the initial level
+                UWorld* World = GetWorld();
+                if (World)
+                {
+                    for (ULevelStreaming* StreamingLevel : World->GetStreamingLevels())
+                    {
+                        if (StreamingLevel)
+                        {
+                            StreamingLevel->SetShouldBeVisible(true);
+                        }
+                    }
+                }
+
+                // Set player spawn location
                 SetActorLocation(GameMode->GetInitialSpawnLocation());
+                APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
+                if (PlayerController)
+                {
+                    PlayerController->SetControlRotation(GameMode->GetInitialSpawnRotation());
+                }
                 SetActorRotation(GameMode->GetInitialSpawnRotation());
             }
         }

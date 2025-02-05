@@ -30,11 +30,15 @@ public:
     TSubclassOf<class UUserWidget> GameOverWidgetTemplate;
     UPROPERTY(EditDefaultsOnly, Category = "UI")
     TSubclassOf<class UUserWidget> SettingsMenuWidgetTemplate;
+    UPROPERTY(EditDefaultsOnly, Category = "UI")
+    TSubclassOf<class UUserWidget> FadeToFromBlackWidgetTemplate;
     
     void DisplayMainMenuWidget();
     void ToggleDisplayPauseMenuWidget();
     void DisplayGameOverMenu();
     void DisplaySettingsMenuWidget();
+    UFUNCTION(BlueprintCallable, Category = "UI")
+    UUserWidget* GetFadeToFromBlackWidget() { return FadeToFromBlackWidget; }
 
     // Getters
     FVector GetInitialSpawnLocation() const { return InitialSpawnLocation; }
@@ -77,6 +81,8 @@ private:
     UUserWidget* GameOverWidget;
     UPROPERTY()
     UUserWidget* SettingsWidget;
+    UPROPERTY()
+    UUserWidget* FadeToFromBlackWidget;
 
     ADescentPlayerController* GetDescentPlayerController() const;
 
