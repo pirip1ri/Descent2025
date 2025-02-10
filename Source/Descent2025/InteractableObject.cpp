@@ -93,6 +93,5 @@ void AInteractableObject::OnOverlapEnd(UPrimitiveComponent* OverlappedComponent,
 
 void AInteractableObject::InteractAbility_Implementation()
 {
-
+    // Implementation logic here
 }
-

@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "DescentSaveGame.h"
 #include "DescentPlayerCharacter.generated.h"
 
 class USkeletalMeshComponent;
@@ -49,9 +50,20 @@ protected:
 
 	UPROPERTY(BlueprintReadWrite, Category = "Player Stats")
 	int32 CurrentHealth;
+
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+	// Keep track of keys
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory")
+	TArray<FString> PlayerCollectedKeys;
+
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	void AddKey(FString Key);
+
+	UFUNCTION(BlueprintCallable, Category = "Inventory")
+	bool HasKey(FString Key) const;
 
 	/** Returns Mesh1P subobject **/
 	USkeletalMeshComponent* GetMesh1P() const { return Mesh1P; }
@@ -59,6 +71,7 @@ public:
 	UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCamera; }
 
 	void SaveGame();
+	void ApplySavedData(UDescentSaveGame* LoadGameInstance);
 	void LoadGame();
 private:
 	bool bIsSprinting = false;

@@ -24,6 +24,12 @@ public:
 	UPROPERTY(BlueprintReadWrite, Category = "Save Data")
 	FRotator PlayerRotation;
 
+	UPROPERTY(VisibleAnywhere, Category = "SaveData")
+	TArray<FString> CollectedKeys;
+
+	UPROPERTY(VisibleAnywhere, Category = "SaveData")
+	TArray<FString> OpenedDoors;
+
 	UPROPERTY(BlueprintReadWrite, Category = "Save Data")
 	int32 PlayerHealth;
 };

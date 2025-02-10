@@ -9,8 +9,12 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "InteractableObject.h"
 #include "DescentSaveGame.h"
+#include "DescentGameInstance.h"
 #include "Engine/LevelStreaming.h"
 #include <Kismet/GameplayStatics.h>
+#include "KeyForDoor.h"
+#include "EngineUtils.h"
+#include "Door.h"
 
 ADescentPlayerCharacter::ADescentPlayerCharacter()
 {
@@ -132,6 +136,13 @@ void ADescentPlayerCharacter::BeginPlay()
 {
     Super::BeginPlay();
 
+    UDescentGameInstance* MyGameInstance = Cast<UDescentGameInstance>(GetGameInstance());
+    if (MyGameInstance && MyGameInstance->PendingSaveGame)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Applying saved game data after level reload."));
+        ApplySavedData(MyGameInstance->PendingSaveGame);
+        MyGameInstance->PendingSaveGame = nullptr; // Prevent reapplying
+    }
 }
 
 // Called every frame
@@ -139,6 +150,16 @@ void ADescentPlayerCharacter::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
 
+}
+
+void ADescentPlayerCharacter::AddKey(FString Key)
+{
+    PlayerCollectedKeys.Add(Key);
+}
+
+bool ADescentPlayerCharacter::HasKey(FString Key) const
+{
+    return PlayerCollectedKeys.Contains(Key);
 }
 
 void ADescentPlayerCharacter::SaveGame()
@@ -149,6 +170,29 @@ void ADescentPlayerCharacter::SaveGame()
     // Store player data
     SaveGameInstance->PlayerLocation = GetActorLocation();
     SaveGameInstance->PlayerRotation = GetActorRotation();
+
+    // Save collected keys
+    SaveGameInstance->CollectedKeys.Empty();
+    for (TActorIterator<AKeyForDoor> KeyItr(GetWorld()); KeyItr; ++KeyItr)
+    {
+        if (KeyItr->bHasBeenCollected) // Assume your AKeyForDoor has a boolean tracking if it's collected
+        {
+            SaveGameInstance->CollectedKeys.Add(KeyItr->GetKeyName());
+        }
+    }
+    // SaveGameInstance->CollectedKeys = PlayerCollectedKeys;
+    UE_LOG(LogTemp, Warning, TEXT("Saved %d keys."), PlayerCollectedKeys.Num());
+
+    // Save opened doors
+    SaveGameInstance->OpenedDoors.Empty();
+    for (TActorIterator<ADoor> DoorItr(GetWorld()); DoorItr; ++DoorItr)
+    {
+        if (DoorItr->DoorState == EDoorState::Opened) // Assuming you have a boolean tracking if the door is open
+        {
+            SaveGameInstance->OpenedDoors.Add(DoorItr->GetDoorName());
+            UE_LOG(LogTemp, Warning, TEXT("Saved Opened Door: %s"), *DoorItr->GetDoorName());
+        }
+    }
 
     // Ensure world is valid
     UWorld* World = GetWorld();
@@ -169,10 +213,8 @@ void ADescentPlayerCharacter::SaveGame()
     UGameplayStatics::SaveGameToSlot(SaveGameInstance, "UpdatedCheckpoint", 0);
 }
 
-void ADescentPlayerCharacter::LoadGame()
+void ADescentPlayerCharacter::ApplySavedData(UDescentSaveGame* LoadGameInstance)
 {
-    UDescentSaveGame* LoadGameInstance = Cast<UDescentSaveGame>(UGameplayStatics::LoadGameFromSlot("UpdatedCheckpoint", 0));
-
     if (LoadGameInstance)
     {
         UWorld* World = GetWorld();
@@ -203,6 +245,41 @@ void ADescentPlayerCharacter::LoadGame()
         {
             PlayerController->SetControlRotation(LoadGameInstance->PlayerRotation);
         }
+
+        // Restore keys (hide collected keys at time of save)
+        PlayerCollectedKeys = LoadGameInstance->CollectedKeys;
+        UE_LOG(LogTemp, Warning, TEXT("Loaded %d keys."), PlayerCollectedKeys.Num());
+
+        for (TActorIterator<AKeyForDoor> KeyItr(GetWorld()); KeyItr; ++KeyItr)
+        {
+            if (LoadGameInstance->CollectedKeys.Contains(KeyItr->GetKeyName()))
+            {
+                KeyItr->Collect();  // Hide the key
+                UE_LOG(LogTemp, Warning, TEXT("Hiding key: %s"), *KeyItr->GetKeyName());
+            }
+            else
+            {
+                KeyItr->RevertCollect();  // Show the key
+                UE_LOG(LogTemp, Warning, TEXT("Restoring key: %s"), *KeyItr->GetKeyName());
+            }
+        }
+
+
+
+        // Restore doors (close doors that weren't opened)
+        for (TActorIterator<ADoor> DoorItr(GetWorld()); DoorItr; ++DoorItr)
+        {
+            if (LoadGameInstance->OpenedDoors.Contains(DoorItr->GetDoorName()))
+            {
+                DoorItr->OpenDoor(); // Reopen doors that were opened
+                UE_LOG(LogTemp, Warning, TEXT("Reopening Door: %s"), *DoorItr->GetDoorName());
+            }
+            else
+            {
+                DoorItr->CloseDoor(); // Close doors that weren’t opened before saving
+                UE_LOG(LogTemp, Warning, TEXT("Closing Door: %s"), *DoorItr->GetDoorName());
+            }
+        }
     }
     else
     {
@@ -212,7 +289,7 @@ void ADescentPlayerCharacter::LoadGame()
         ADescentGameModeBase* GameMode = Cast<ADescentGameModeBase>(GetWorld()->GetAuthGameMode());
         if (GameMode)
         {
-            FString InitialLevelName = GameMode->GetInitialLevelName(); // Make sure GameMode has this function
+            FString InitialLevelName = GameMode->GetInitialLevelName();
             FString CurrentLevel = GetWorld()->GetMapName();
             CurrentLevel.RemoveFromStart(GetWorld()->StreamingLevelsPrefix);
 
@@ -251,4 +328,35 @@ void ADescentPlayerCharacter::LoadGame()
             UE_LOG(LogTemp, Error, TEXT("GameMode is null! Cannot load initial level."));
         }
     }
+}
+
+void ADescentPlayerCharacter::LoadGame()
+{
+    UDescentSaveGame* LoadGameInstance = Cast<UDescentSaveGame>(UGameplayStatics::LoadGameFromSlot("UpdatedCheckpoint", 0));
+    if (LoadGameInstance)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Loaded Save Data: Location = %s"), *LoadGameInstance->PlayerLocation.ToString());
+    }
+    else
+    {
+        UE_LOG(LogTemp, Error, TEXT("LoadGameInstance is NULL!"));
+    }
+
+    if (LoadGameInstance)
+    {
+        // Store the save slot name in the GameInstance so it persists after reloading
+        UDescentGameInstance* MyGameInstance = Cast<UDescentGameInstance>(GetGameInstance());
+        if (MyGameInstance)
+        {
+            MyGameInstance->PendingSaveGame = LoadGameInstance;
+        }
+
+        ApplySavedData(LoadGameInstance);
+
+        // Reload the level to reset everything first
+        /*FString CurrentLevelName = UGameplayStatics::GetCurrentLevelName(this);
+        UGameplayStatics::OpenLevel(this, FName(*CurrentLevelName));*/
+    }
+
+    UE_LOG(LogTemp, Warning, TEXT("No saved game found!"));
 }
