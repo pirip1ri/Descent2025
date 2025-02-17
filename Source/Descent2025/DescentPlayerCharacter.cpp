@@ -19,7 +19,7 @@
 ADescentPlayerCharacter::ADescentPlayerCharacter()
 {
     // Set size for collision capsule
-    GetCapsuleComponent()->InitCapsuleSize(55.f, 96.0f);
+    GetCapsuleComponent()->InitCapsuleSize(25.0f, 96.0f);
 
     // Create a Camera and attach it to the CameraBoom
     FirstPersonCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
@@ -35,10 +35,8 @@ ADescentPlayerCharacter::ADescentPlayerCharacter()
     Mesh1P->SetRelativeLocation(FVector(-30.f, 0.f, -150.f));
 
     // Set default speeds
-    WalkSpeed = 400.f;
-    SprintSpeed = 800.f;
-    // Set default movement properties
-    GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+    WalkSpeed = 200.f;
+    SprintSpeed = 300.f;
     CurrentHealth = 100.0f;
 }
 
@@ -115,7 +113,7 @@ void ADescentPlayerCharacter::InteractWithObject()
         // Perform a line trace or check nearby objects
         FHitResult HitResult;
         FVector Start = GetActorLocation(); // Start of the line trace is where the player is
-        FVector End = Start + (GetActorForwardVector() * 200.f); // End point = 200m away from Start point in the direction the player is looking in
+        FVector End = Start + (GetActorForwardVector() * 100.f); // End point = 200m away from Start point in the direction the player is looking in
 
         FCollisionQueryParams Params;
         Params.AddIgnoredActor(this); // ignore self
@@ -136,13 +134,18 @@ void ADescentPlayerCharacter::BeginPlay()
 {
     Super::BeginPlay();
 
-    UDescentGameInstance* MyGameInstance = Cast<UDescentGameInstance>(GetGameInstance());
-    if (MyGameInstance && MyGameInstance->PendingSaveGame)
+    UWorld* World = GetWorld();
+    if (!World) return;
+
+    UDescentSaveGame* LoadGameInstance = Cast<UDescentSaveGame>(UGameplayStatics::LoadGameFromSlot(TEXT("SaveSlot"), 0));
+    if (LoadGameInstance)
     {
-        UE_LOG(LogTemp, Warning, TEXT("Applying saved game data after level reload."));
-        ApplySavedData(MyGameInstance->PendingSaveGame);
-        MyGameInstance->PendingSaveGame = nullptr; // Prevent reapplying
+        // Apply saved data (loads saved sublevels)
+        ApplySavedData(LoadGameInstance);
     }
+
+    bIsSprinting = false;
+    GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 }
 
 // Called every frame
@@ -215,25 +218,53 @@ void ADescentPlayerCharacter::SaveGame()
 
 void ADescentPlayerCharacter::ApplySavedData(UDescentSaveGame* LoadGameInstance)
 {
-    if (LoadGameInstance)
+    UWorld* World = GetWorld();
+    if (World)
     {
-        UWorld* World = GetWorld();
-        if (World)
+        if (LoadGameInstance)
         {
-            // First, unload all existing sublevels
+            TArray<FString> SublevelsToLoad;
+
+            if (LoadGameInstance->ActiveSublevels.Num() > 0)
+            {
+                // Use saved sublevels
+                SublevelsToLoad = LoadGameInstance->ActiveSublevels;
+            }
+            else
+            {
+                // Use default sublevels from BeginPlay (assuming you stored them in a member variable)
+                UE_LOG(LogTemp, Warning, TEXT("No saved sublevels found! Using default ones."));
+                // No save file exists, load default sublevels
+                TArray<FString> DefaultSublevels = { TEXT("TemplateCarriage"), TEXT("Carriage1") };
+                SublevelsToLoad = DefaultSublevels;
+            }
             for (ULevelStreaming* StreamingLevel : World->GetStreamingLevels())
             {
                 if (StreamingLevel)
                 {
-                    StreamingLevel->SetShouldBeVisible(false);
+                    FString SublevelName = StreamingLevel->GetWorldAssetPackageName();
+                    SublevelName.RemoveFromStart(World->StreamingLevelsPrefix);  // Remove prefix if needed
+
+                    // Unload sublevels that are not in the saved ActiveSublevels list
+                    if (!LoadGameInstance->ActiveSublevels.Contains(SublevelName))
+                    {
+                        UGameplayStatics::UnloadStreamLevel(World, FName(*SublevelName), FLatentActionInfo(), false);
+                    }
                 }
             }
 
-            // Then, load the saved sublevels
-            for (const FString& SublevelName : LoadGameInstance->ActiveSublevels)
+            for (const FString& SublevelName : SublevelsToLoad)
             {
-                UGameplayStatics::LoadStreamLevel(World, FName(*SublevelName), true, true, FLatentActionInfo());
+                ULevelStreaming* StreamingLevel = UGameplayStatics::GetStreamingLevel(World, FName(*SublevelName));
+                if (StreamingLevel)
+                {
+                    LevelsToCheck.Add(StreamingLevel);
+                    UGameplayStatics::LoadStreamLevel(World, FName(*SublevelName), true, true, FLatentActionInfo());
+                }
             }
+            // Start checking after a short delay to allow levels to begin loading
+            GetWorld()->GetTimerManager().SetTimer(LoadCheckTimerHandle, this, &ADescentPlayerCharacter::CheckIfLevelsAreLoaded, 0.5f, false);
+
         }
 
         // Restore player position and rotation
@@ -284,49 +315,38 @@ void ADescentPlayerCharacter::ApplySavedData(UDescentSaveGame* LoadGameInstance)
     else
     {
         UE_LOG(LogTemp, Warning, TEXT("No saved game found! Loading initial game level."));
-
-        // Get GameMode to access initial spawn and level
         ADescentGameModeBase* GameMode = Cast<ADescentGameModeBase>(GetWorld()->GetAuthGameMode());
-        if (GameMode)
-        {
-            FString InitialLevelName = GameMode->GetInitialLevelName();
-            FString CurrentLevel = GetWorld()->GetMapName();
-            CurrentLevel.RemoveFromStart(GetWorld()->StreamingLevelsPrefix);
+        FString InitialLevelName = GameMode->GetInitialLevelName();
+        UGameplayStatics::OpenLevel(this, FName(InitialLevelName));
+        UE_LOG(LogTemp, Display, TEXT("Opening initial level: %s"), *InitialLevelName);
+        // Get GameMode to access initial spawn and level
+        //ADescentGameModeBase* GameMode = Cast<ADescentGameModeBase>(GetWorld()->GetAuthGameMode());
+        //if (GameMode)
+        //{
+        //    FString InitialLevelName = GameMode->GetInitialLevelName();
+        //    FString CurrentLevel = GetWorld()->GetMapName();
+        //    CurrentLevel.RemoveFromStart(GetWorld()->StreamingLevelsPrefix);
 
-            if (InitialLevelName != CurrentLevel)
-            {
-                UE_LOG(LogTemp, Display, TEXT("Opening initial level: %s"), *InitialLevelName);
-                UGameplayStatics::OpenLevel(this, FName(InitialLevelName));
-            }
-            else
-            {
-                // Load the necessary sublevels for the initial level
-                UWorld* World = GetWorld();
-                if (World)
-                {
-                    for (ULevelStreaming* StreamingLevel : World->GetStreamingLevels())
-                    {
-                        if (StreamingLevel)
-                        {
-                            StreamingLevel->SetShouldBeVisible(true);
-                        }
-                    }
-                }
+        //    if (InitialLevelName != CurrentLevel)
+        //    {
+        //        UE_LOG(LogTemp, Display, TEXT("Opening initial level: %s"), *InitialLevelName);
+        //        UGameplayStatics::OpenLevel(this, FName(InitialLevelName));
+        //    }
+        //    else
+        //    {
+        //        // Force reload the level to ensure everything is set up correctly
+        //        UGameplayStatics::OpenLevel(this, FName(*InitialLevelName));
 
-                // Set player spawn location
-                SetActorLocation(GameMode->GetInitialSpawnLocation());
-                APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
-                if (PlayerController)
-                {
-                    PlayerController->SetControlRotation(GameMode->GetInitialSpawnRotation());
-                }
-                SetActorRotation(GameMode->GetInitialSpawnRotation());
-            }
-        }
-        else
-        {
-            UE_LOG(LogTemp, Error, TEXT("GameMode is null! Cannot load initial level."));
-        }
+        //        // Set player spawn location
+        //        SetActorLocation(GameMode->GetInitialSpawnLocation());
+        //        APlayerController* PlayerController = GetWorld()->GetFirstPlayerController();
+        //        if (PlayerController)
+        //        {
+        //            PlayerController->SetControlRotation(GameMode->GetInitialSpawnRotation());
+        //        }
+        //        SetActorRotation(GameMode->GetInitialSpawnRotation());
+        //    }
+        //}
     }
 }
 
@@ -357,6 +377,38 @@ void ADescentPlayerCharacter::LoadGame()
         /*FString CurrentLevelName = UGameplayStatics::GetCurrentLevelName(this);
         UGameplayStatics::OpenLevel(this, FName(*CurrentLevelName));*/
     }
+    else
+    {
+        ADescentGameModeBase* GameMode = Cast<ADescentGameModeBase>(GetWorld()->GetAuthGameMode());
+        FString InitialLevelName = GameMode->GetInitialLevelName();
+        UGameplayStatics::OpenLevel(this, FName(InitialLevelName));
+        UE_LOG(LogTemp, Warning, TEXT("No saved game found!"));
+        GameMode->FadeFromBlack();
+    }
+}
 
-    UE_LOG(LogTemp, Warning, TEXT("No saved game found!"));
+void ADescentPlayerCharacter::CheckIfLevelsAreLoaded()
+{
+    bool bAllLoaded = true;
+
+    for (ULevelStreaming* Level : LevelsToCheck)
+    {
+        if (Level && !Level->IsLevelLoaded())
+        {
+            bAllLoaded = false;
+            break;  // Stop checking if any level isn't loaded yet
+        }
+    }
+
+    if (bAllLoaded)
+    {
+        // All levels are now loaded; fade from black
+        ADescentGameModeBase* GameMode = Cast<ADescentGameModeBase>(GetWorld()->GetAuthGameMode());
+        GameMode->FadeFromBlack();
+    }
+    else
+    {
+        // Recheck in 0.1 seconds
+        GetWorld()->GetTimerManager().SetTimer(LoadCheckTimerHandle, this, &ADescentPlayerCharacter::CheckIfLevelsAreLoaded, 0.1f, false);
+    }
 }

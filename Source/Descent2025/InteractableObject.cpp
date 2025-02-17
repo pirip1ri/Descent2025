@@ -2,7 +2,7 @@
 
 
 #include "InteractableObject.h"
-#include "Components/SphereComponent.h"
+#include "Components/BoxComponent.h"
 #include "DescentPlayerCharacter.h"
 #include "Blueprint/UserWidget.h"
 #include "Components/WidgetComponent.h"
@@ -14,15 +14,23 @@ AInteractableObject::AInteractableObject()
     InteractionText = TEXT("Interact");
     AlternativeInteractionText = TEXT("Alternative Text to Interact");
 
-    // Set up the interaction sphere
-    InteractionSphere = CreateDefaultSubobject<USphereComponent>(TEXT("InteractionSphere"));
-    InteractionSphere->InitSphereRadius(100.f);
-    InteractionSphere->SetCollisionProfileName(TEXT("Trigger"));
-    RootComponent = InteractionSphere;
+    // Create a root component
+    USceneComponent* SceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("RootComponent"));
+    RootComponent = SceneRoot;
+
+    // Set up the interaction box
+    InteractionBox = CreateDefaultSubobject<UBoxComponent>(TEXT("InteractionBox"));
+    InteractionBox->SetBoxExtent(FVector(50.f, 50.f, 50.f)); // Adjust size as needed
+    InteractionBox->SetCollisionProfileName(TEXT("Trigger"));
+    InteractionBox->SetupAttachment(RootComponent);
 
     // Bind the overlap event
-    InteractionSphere->OnComponentBeginOverlap.AddDynamic(this, &AInteractableObject::OnOverlapBegin);
-    InteractionSphere->OnComponentEndOverlap.AddDynamic(this, &AInteractableObject::OnOverlapEnd);
+    InteractionBox->OnComponentBeginOverlap.AddDynamic(this, &AInteractableObject::OnOverlapBegin);
+    InteractionBox->OnComponentEndOverlap.AddDynamic(this, &AInteractableObject::OnOverlapEnd);
+
+    // Set up the static mesh
+    StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
+    StaticMesh->SetupAttachment(RootComponent);
 
     // Set up the interaction widget
     InteractionWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("InteractionWidget"));
@@ -64,16 +72,20 @@ void AInteractableObject::ChangeTextToAlternativeText()
 
 void AInteractableObject::OnOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
+    UE_LOG(LogTemp, Display, TEXT("AInteractableObject::OnOverlapBegin"));
     ADescentPlayerCharacter* PlayerCharacter = Cast<ADescentPlayerCharacter>(OtherActor);
     if (PlayerCharacter && InteractionWidget)
     {
+        UE_LOG(LogTemp, Display, TEXT("AInteractableObject::OnOverlapBegin Widget and Character exist"));
         // Get the widget instance and set the interaction text dynamically
         UUserWidget* WidgetInstance = InteractionWidget->GetUserWidgetObject();
         if (WidgetInstance)
         {
+            UE_LOG(LogTemp, Display, TEXT("AInteractableObject::OnOverlapBegin Widget Instance exist"));
             UTextBlock* TextBlock = Cast<UTextBlock>(WidgetInstance->GetWidgetFromName(TEXT("InteractionTextBlock")));
             if (TextBlock)
             {
+                UE_LOG(LogTemp, Display, TEXT("AInteractableObject::OnOverlapBegin displayed text"));
                 TextBlock->SetText(FText::FromString(InteractionText));
             }
         }

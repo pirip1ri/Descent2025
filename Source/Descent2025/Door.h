@@ -24,9 +24,6 @@ class DESCENT2025_API ADoor : public AInteractableObject
 public:
 	ADoor();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Door")
-	UStaticMeshComponent* DoorMesh;
-
 	UFUNCTION(BlueprintCallable, Category = "Interaction")
 	void InteractAbilityCall();
 

@@ -26,9 +26,6 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Key")
 	bool bHasBeenCollected = false;
 
-	UPROPERTY(EditAnywhere, Category = "Key")
-	UStaticMeshComponent* KeyMesh;
-
 	void Collect();
 	void RevertCollect();
 

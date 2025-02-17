@@ -7,16 +7,6 @@
 AKeyForDoor::AKeyForDoor()
 {
 	InteractionText = TEXT("Key");
-
-	KeyMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("KeyMesh"));
-	KeyMesh->SetupAttachment(RootComponent);
-
-	// Load a default mesh (assign a valid asset in Blueprints or via code)
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> KeyMeshAsset(TEXT("/Game/Path/To/Your/KeyMesh"));
-	if (KeyMeshAsset.Succeeded())
-	{
-		KeyMesh->SetStaticMesh(KeyMeshAsset.Object);
-	}
 }
 
 void AKeyForDoor::InteractAbilityCall()
@@ -34,12 +24,12 @@ void AKeyForDoor::Collect()
 {
 	bHasBeenCollected = true;
 	SetActorEnableCollision(false); // Disable collision
-	KeyMesh->SetVisibility(false);  // Hide the mesh
+	StaticMesh->SetVisibility(false);  // Hide the mesh
 }
 
 void AKeyForDoor::RevertCollect()
 {
 	bHasBeenCollected = false;
 	SetActorEnableCollision(true); // Disable collision
-	KeyMesh->SetVisibility(true);  // Hide the mesh
+	StaticMesh->SetVisibility(true);  // Hide the mesh
 }

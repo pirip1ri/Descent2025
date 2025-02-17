@@ -6,5 +6,5 @@
 ADescentGameStateBase::ADescentGameStateBase()
 {
 	// Initialize the state to StartMenu
-	CurrentState = EGameState::StartMenu;
+	CurrentState = EGameState::None;
 }

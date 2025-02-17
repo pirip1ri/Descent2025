@@ -72,19 +72,15 @@ void ADescentGameModeBase::DisplayMainMenuWidget()
 	{
 		// If not, set the viewport and controls respectively
 		MainMenuWidget = CreateWidget<UUserWidget>(GetWorld(), MainMenuWidgetTemplate);
-		if (MainMenuWidget)
-		{
-			MainMenuWidget->AddToViewport();
+	}
 
-			ADescentPlayerController* PlayerController = GetDescentPlayerController();
-			if (PlayerController)
-			{
-				PlayerController->SetInputMode(FInputModeUIOnly());
-				PlayerController->bShowMouseCursor = true;
-			}
+	MainMenuWidget->AddToViewport();
 
-			UGameplayStatics::SetGamePaused(GetWorld(), true);
-		}
+	ADescentPlayerController* PlayerController = GetDescentPlayerController();
+	if (PlayerController)
+	{
+		PlayerController->SetInputMode(FInputModeUIOnly());
+		PlayerController->bShowMouseCursor = true;
 	}
 }
 
@@ -232,6 +228,28 @@ void ADescentGameModeBase::DisplaySettingsMenuWidget()
 	PlayerController->bShowMouseCursor = true;
 }
 
+void ADescentGameModeBase::DisplayGameWinWidget()
+{
+	// Retrieve the main menu widget that we have set in the editor, and if it is set, trigger the function
+	if (GameWinWidgetTemplate)
+	{
+		// Create a main menu widget in game, using the template from MainMenuWidgetClass
+		GameWinWidget = CreateWidget<UUserWidget>(GetWorld(), GameWinWidgetTemplate);
+		// If successful...
+		if (GameWinWidget)
+		{
+			// Add to viewport
+			GameWinWidget->AddToViewport();
+			// Pause the game
+			UGameplayStatics::SetGamePaused(GetWorld(), true);
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Display, TEXT("AMainMenuGameMode::DisplayMainMenuWidget() no widget set"));
+	}
+}
+
 void ADescentGameModeBase::BeginPlay()
 {
 	Super::BeginPlay();
@@ -265,10 +283,7 @@ void ADescentGameModeBase::SetGameToMainMenuMode()
 	{
 		UGameplayStatics::OpenLevel(GetWorld(), MainMenuLevelName);
 	}
-
-	// Delay displaying the menu to ensure the level has loaded
-	FTimerHandle TimerHandle;
-	GetWorldTimerManager().SetTimer(TimerHandle, this, &ADescentGameModeBase::DisplayMainMenuWidget, 0.5f, false);
+	DisplayMainMenuWidget();
 }
 
 void ADescentGameModeBase::SetGameToPlay()
@@ -358,12 +373,18 @@ void ADescentGameModeBase::SetGameToLoad()
 
 void ADescentGameModeBase::SetGameToGameOver()
 {
-	// Game Over Mechanics
+	UE_LOG(LogTemp, Warning, TEXT("void ADescentGameModeBase::SetGameToGameOver()"));
+	UGameplayStatics::SetGamePaused(GetWorld(), true);
+
+	DisplayGameOverMenu();
 }
 
 void ADescentGameModeBase::SetGameToGameWin()
 {
-	// Game Win mechanics
+	UE_LOG(LogTemp, Warning, TEXT("void ADescentGameModeBase::SetGameToGameWin"));
+	UGameplayStatics::SetGamePaused(GetWorld(), true);
+
+	DisplayGameWinWidget();
 }
 
 void ADescentGameModeBase::SetCheckpoint()

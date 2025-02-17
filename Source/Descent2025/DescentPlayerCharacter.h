@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "DescentSaveGame.h"
+#include "Engine/LevelStreaming.h"
 #include "DescentPlayerCharacter.generated.h"
 
 class USkeletalMeshComponent;
@@ -75,4 +76,7 @@ public:
 	void LoadGame();
 private:
 	bool bIsSprinting = false;
+	TArray<ULevelStreaming*> LevelsToCheck;
+	void CheckIfLevelsAreLoaded();
+	FTimerHandle LoadCheckTimerHandle;
 };

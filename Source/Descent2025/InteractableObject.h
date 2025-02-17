@@ -26,6 +26,10 @@ public:
 	FString InteractionText;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Interaction")
 	FString AlternativeInteractionText;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Door")
+	UStaticMeshComponent* StaticMesh;
+
 	// Custom Widget
 	UPROPERTY(EditAnywhere, Category = "Components")
 	UWidgetComponent* InteractionWidget;
@@ -35,7 +39,7 @@ protected:
 
 	// Add a collision component for interaction
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Interaction")
-	class USphereComponent* InteractionSphere;
+	class UBoxComponent* InteractionBox;
 
 	UFUNCTION(BlueprintCallable, Category = "Interaction")
 	void ChangeTextToAlternativeText();

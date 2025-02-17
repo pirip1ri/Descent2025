@@ -31,12 +31,15 @@ public:
     UPROPERTY(EditDefaultsOnly, Category = "UI")
     TSubclassOf<class UUserWidget> SettingsMenuWidgetTemplate;
     UPROPERTY(EditDefaultsOnly, Category = "UI")
+    TSubclassOf<class UUserWidget> GameWinWidgetTemplate;
+    UPROPERTY(EditDefaultsOnly, Category = "UI")
     TSubclassOf<class UUserWidget> FadeToFromBlackWidgetTemplate;
     
     void DisplayMainMenuWidget();
     void ToggleDisplayPauseMenuWidget();
     void DisplayGameOverMenu();
     void DisplaySettingsMenuWidget();
+    void DisplayGameWinWidget();
     UFUNCTION(BlueprintCallable, Category = "UI")
     UUserWidget* GetFadeToFromBlackWidget() { return FadeToFromBlackWidget; }
 
@@ -53,6 +56,8 @@ public:
     float BrightnessValue = 1.0f;
     UFUNCTION(BlueprintCallable, Category = "UI")
     void SetBrightnessValue(float NewBrightness) { BrightnessValue = NewBrightness; }
+    UFUNCTION(BlueprintImplementableEvent, Category = "UI")
+    void FadeFromBlack();
 
 protected:
     virtual void BeginPlay() override;
@@ -81,6 +86,8 @@ private:
     UUserWidget* GameOverWidget;
     UPROPERTY()
     UUserWidget* SettingsWidget;
+    UPROPERTY()
+    UUserWidget* GameWinWidget;
     UPROPERTY()
     UUserWidget* FadeToFromBlackWidget;
 

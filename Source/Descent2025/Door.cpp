@@ -11,9 +11,6 @@ ADoor::ADoor()
 	// Set default door state
 	DoorState = EDoorState::Closed;
 
-	// Setup Door Mesh
-	DoorMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("DoorMesh"));
-	RootComponent = DoorMesh;
 }
 
 void ADoor::InteractAbilityCall()
