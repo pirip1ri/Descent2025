@@ -52,9 +52,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Door")
 	void UnlockDoor();
 
-	UFUNCTION(BlueprintImplementableEvent, Category = "Door")
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "Door")
 	void OpenDoor(); 
 
-	UFUNCTION(BlueprintImplementableEvent, Category = "Door")
+	UFUNCTION(BlueprintCallable, BlueprintImplementableEvent, Category = "Door")
 	void CloseDoor();
 };

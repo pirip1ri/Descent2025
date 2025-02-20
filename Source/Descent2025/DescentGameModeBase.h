@@ -20,7 +20,7 @@ public:
     ADescentGameModeBase();
 
     UFUNCTION(BlueprintCallable, Category = "Game Mode")
-    void ChangeGameState(EGameState NewState);
+    void ChangeGameState(EDescentGameState NewState);
 
     UPROPERTY(EditDefaultsOnly, Category = "UI")
     TSubclassOf<class UUserWidget> MainMenuWidgetTemplate;

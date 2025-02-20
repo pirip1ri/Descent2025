@@ -7,7 +7,7 @@
 #include "DescentGameStateBase.generated.h"
 
 UENUM(BlueprintType)
-enum class EGameState : uint8
+enum class EDescentGameState : uint8
 {
     StartMenu,
     Playing,
@@ -29,17 +29,17 @@ public:
     ADescentGameStateBase();
 
     UPROPERTY(BlueprintReadOnly, Category = "Game State")
-    EGameState PreviousState = EGameState::None;
+    EDescentGameState PreviousState = EDescentGameState::None;
 
     UFUNCTION(BlueprintCallable, Category = "Game State")
-    void SetPreviousGameState(EGameState NewPreviousState) { PreviousState = NewPreviousState; }
+    void SetPreviousGameState(EDescentGameState NewPreviousState) { PreviousState = NewPreviousState; }
 
     UPROPERTY(BlueprintReadOnly, Category = "Game State")
-    EGameState CurrentState = EGameState::None;
+    EDescentGameState CurrentState = EDescentGameState::None;
 
     UFUNCTION(BlueprintCallable, Category = "Game State")
-    void SetGameState(EGameState NewState) { CurrentState = NewState; }
+    void SetGameState(EDescentGameState NewState) { CurrentState = NewState; }
 
     UFUNCTION(BlueprintCallable, Category = "Game State")
-    EGameState GetGameState() const { return CurrentState; }
+    EDescentGameState GetGameState() const { return CurrentState; }
 };

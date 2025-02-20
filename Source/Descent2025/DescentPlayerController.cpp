@@ -136,7 +136,7 @@ void ADescentPlayerController::TogglePause()
     }
 
     // Use the GameMode's functionality to toggle the pause menu
-    GameMode->ChangeGameState(EGameState::Paused);
+    GameMode->ChangeGameState(EDescentGameState::Paused);
 }
 
 void ADescentPlayerController::SetInputModeForPause(bool bIsPaused)

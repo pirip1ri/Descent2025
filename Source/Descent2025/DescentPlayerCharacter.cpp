@@ -238,31 +238,50 @@ void ADescentPlayerCharacter::ApplySavedData(UDescentSaveGame* LoadGameInstance)
                 TArray<FString> DefaultSublevels = { TEXT("TemplateCarriage"), TEXT("Carriage1") };
                 SublevelsToLoad = DefaultSublevels;
             }
+
             for (ULevelStreaming* StreamingLevel : World->GetStreamingLevels())
             {
                 if (StreamingLevel)
                 {
+                    // Get the sublevel name
                     FString SublevelName = StreamingLevel->GetWorldAssetPackageName();
-                    SublevelName.RemoveFromStart(World->StreamingLevelsPrefix);  // Remove prefix if needed
+                    SublevelName.RemoveFromStart(World->StreamingLevelsPrefix);
 
-                    // Unload sublevels that are not in the saved ActiveSublevels list
-                    if (!LoadGameInstance->ActiveSublevels.Contains(SublevelName))
+                    // Check if this sublevel is in the saved ActiveSublevels list
+                    bool bShouldLoad = LoadGameInstance->ActiveSublevels.Contains(SublevelName);
+
+                    // If the level needs to be loaded
+                    if (bShouldLoad && !StreamingLevel->IsLevelLoaded())
                     {
+                        // Log to check level names
+                        UE_LOG(LogTemp, Warning, TEXT("Loading Sublevel: %s"), *SublevelName);
+
+                        // Add to the list of levels to check (for future reference)
+                        LevelsToCheck.Add(StreamingLevel);
+
+                        // Load the sublevel (no latent action info)
+                        UGameplayStatics::LoadStreamLevel(World, FName(*SublevelName), true, true, FLatentActionInfo());
+
+                        if (StreamingLevel && StreamingLevel->IsLevelLoaded())
+                        {
+                            UE_LOG(LogTemp, Warning, TEXT("Successfully Loaded: %s"), *SublevelName);
+                        }
+                        else
+                        {
+                            UE_LOG(LogTemp, Warning, TEXT("Failed to Load or Activate: %s"), *SublevelName);
+                        }
+                    }
+                    // If the level does not need to be loaded (i.e., unload it)
+                    else if (!bShouldLoad && StreamingLevel->IsLevelLoaded())
+                    {
+                        // Log the unloading action
+                        UE_LOG(LogTemp, Display, TEXT("Unloading Sublevel: %s"), *SublevelName);
+
+                        // Unload the sublevel asynchronously
                         UGameplayStatics::UnloadStreamLevel(World, FName(*SublevelName), FLatentActionInfo(), false);
                     }
                 }
             }
-
-            for (const FString& SublevelName : SublevelsToLoad)
-            {
-                ULevelStreaming* StreamingLevel = UGameplayStatics::GetStreamingLevel(World, FName(*SublevelName));
-                if (StreamingLevel)
-                {
-                    LevelsToCheck.Add(StreamingLevel);
-                    UGameplayStatics::LoadStreamLevel(World, FName(*SublevelName), true, true, FLatentActionInfo());
-                }
-            }
-            // Start checking after a short delay to allow levels to begin loading
             GetWorld()->GetTimerManager().SetTimer(LoadCheckTimerHandle, this, &ADescentPlayerCharacter::CheckIfLevelsAreLoaded, 0.5f, false);
 
         }
@@ -353,29 +372,18 @@ void ADescentPlayerCharacter::ApplySavedData(UDescentSaveGame* LoadGameInstance)
 void ADescentPlayerCharacter::LoadGame()
 {
     UDescentSaveGame* LoadGameInstance = Cast<UDescentSaveGame>(UGameplayStatics::LoadGameFromSlot("UpdatedCheckpoint", 0));
+
     if (LoadGameInstance)
     {
         UE_LOG(LogTemp, Warning, TEXT("Loaded Save Data: Location = %s"), *LoadGameInstance->PlayerLocation.ToString());
-    }
-    else
-    {
-        UE_LOG(LogTemp, Error, TEXT("LoadGameInstance is NULL!"));
-    }
-
-    if (LoadGameInstance)
-    {
         // Store the save slot name in the GameInstance so it persists after reloading
-        UDescentGameInstance* MyGameInstance = Cast<UDescentGameInstance>(GetGameInstance());
-        if (MyGameInstance)
+        UDescentGameInstance* DescentGameInstance = Cast<UDescentGameInstance>(GetGameInstance());
+        if (DescentGameInstance)
         {
-            MyGameInstance->PendingSaveGame = LoadGameInstance;
+            DescentGameInstance->PendingSaveGame = LoadGameInstance;
         }
 
         ApplySavedData(LoadGameInstance);
-
-        // Reload the level to reset everything first
-        /*FString CurrentLevelName = UGameplayStatics::GetCurrentLevelName(this);
-        UGameplayStatics::OpenLevel(this, FName(*CurrentLevelName));*/
     }
     else
     {
@@ -389,26 +397,29 @@ void ADescentPlayerCharacter::LoadGame()
 
 void ADescentPlayerCharacter::CheckIfLevelsAreLoaded()
 {
-    bool bAllLoaded = true;
+    ADescentGameModeBase* GameMode = Cast<ADescentGameModeBase>(GetWorld()->GetAuthGameMode());
+    GameMode->FadeFromBlack();
+    
+    //bool bAllLoaded = true;
+    //UE_LOG(LogTemp, Display, TEXT("Level is loading"));
+    //for (ULevelStreaming* Level : LevelsToCheck)
+    //{
+    //    if (Level && !Level->IsLevelLoaded())
+    //    {
+    //        bAllLoaded = false;
+    //        break;  // Stop checking if any level isn't loaded yet
+    //    }
+    //}
 
-    for (ULevelStreaming* Level : LevelsToCheck)
-    {
-        if (Level && !Level->IsLevelLoaded())
-        {
-            bAllLoaded = false;
-            break;  // Stop checking if any level isn't loaded yet
-        }
-    }
-
-    if (bAllLoaded)
-    {
-        // All levels are now loaded; fade from black
-        ADescentGameModeBase* GameMode = Cast<ADescentGameModeBase>(GetWorld()->GetAuthGameMode());
-        GameMode->FadeFromBlack();
-    }
-    else
-    {
-        // Recheck in 0.1 seconds
-        GetWorld()->GetTimerManager().SetTimer(LoadCheckTimerHandle, this, &ADescentPlayerCharacter::CheckIfLevelsAreLoaded, 0.1f, false);
-    }
+    //if (bAllLoaded)
+    //{
+    //    // All levels are now loaded; fade from black
+    //    ADescentGameModeBase* GameMode = Cast<ADescentGameModeBase>(GetWorld()->GetAuthGameMode());
+    //    GameMode->FadeFromBlack();
+    //}
+    //else
+    //{
+    //    // Recheck in 0.1 seconds
+    //    GetWorld()->GetTimerManager().SetTimer(LoadCheckTimerHandle, this, &ADescentPlayerCharacter::CheckIfLevelsAreLoaded, 0.1f, false);
+    //}
 }

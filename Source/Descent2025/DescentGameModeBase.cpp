@@ -13,7 +13,7 @@ ADescentGameModeBase::ADescentGameModeBase()
 
 }
 
-void ADescentGameModeBase::ChangeGameState(EGameState NewState)
+void ADescentGameModeBase::ChangeGameState(EDescentGameState NewState)
 {
 	ADescentGameStateBase* GameStateRef = GetGameState<ADescentGameStateBase>();
 	if (!GameStateRef)
@@ -33,21 +33,21 @@ void ADescentGameModeBase::ChangeGameState(EGameState NewState)
 	// Check what the new game state is, and call the required function
 	switch (NewState)
 	{
-	case EGameState::StartMenu: SetGameToMainMenuMode(); break;
+	case EDescentGameState::StartMenu: SetGameToMainMenuMode(); break;
 	
-	case EGameState::Playing: SetGameToPlay(); break;
+	case EDescentGameState::Playing: SetGameToPlay(); break;
 	
-	case EGameState::Paused: SetGameToPause(); break;
+	case EDescentGameState::Paused: SetGameToPause(); break;
 	
-	case EGameState::Loading: SetGameToLoad(); break;
+	case EDescentGameState::Loading: SetGameToLoad(); break;
 
-	case EGameState::Settings: SetGameToSettings(); break;
+	case EDescentGameState::Settings: SetGameToSettings(); break;
 	
-	case EGameState::GameOver: SetGameToGameOver(); break;
+	case EDescentGameState::GameOver: SetGameToGameOver(); break;
 	
-	case EGameState::Checkpoint: SetCheckpoint(); break;
+	case EDescentGameState::Checkpoint: SetCheckpoint(); break;
 	
-	case EGameState::GameWin: SetGameToGameWin(); break;
+	case EDescentGameState::GameWin: SetGameToGameWin(); break;
 	
 	default:
 		UE_LOG(LogTemp, Warning, TEXT("Unhandled game state in ChangeGameState!"));
@@ -126,7 +126,6 @@ void ADescentGameModeBase::ToggleDisplayPauseMenuWidget()
 		// Pause the game and set input mode to UI only
 		if (PlayerController)
 		{
-			PlayerController->SetPause(true);
 			FInputModeUIOnly InputMode;
 			InputMode.SetWidgetToFocus(PauseMenuWidget->TakeWidget());
 			PlayerController->SetInputMode(InputMode);
@@ -267,11 +266,11 @@ void ADescentGameModeBase::BeginPlay()
 	FString CurrentLevel = UGameplayStatics::GetCurrentLevelName(GetWorld());
 	if (CurrentLevel == MainMenuLevelName.ToString())
 	{
-		ChangeGameState(EGameState::StartMenu);
+		ChangeGameState(EDescentGameState::StartMenu);
 	}
 	else
 	{
-		ChangeGameState(EGameState::Playing);
+		ChangeGameState(EDescentGameState::Playing);
 	}
 }
 
@@ -362,12 +361,12 @@ void ADescentGameModeBase::SetGameToLoad()
 		UE_LOG(LogTemp, Display, TEXT("Game loaded from checkpoint!"));
 
 		// If loading was successful, transition back to Playing state
-		ChangeGameState(EGameState::Playing);
+		ChangeGameState(EDescentGameState::Playing);
 	}
 	else
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Failed to load checkpoint: No player character found!"));
-		ChangeGameState(EGameState::Playing);
+		ChangeGameState(EDescentGameState::Playing);
 	}
 }
 
@@ -396,7 +395,7 @@ void ADescentGameModeBase::SetCheckpoint()
 		UE_LOG(LogTemp, Display, TEXT("Checkpoint saved!"));
 
 		// If saving was successful, transition back to Playing state
-		ChangeGameState(EGameState::Playing);
+		ChangeGameState(EDescentGameState::Playing);
 	}
 	else
 	{
