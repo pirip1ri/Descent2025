@@ -220,7 +220,6 @@ void ADescentGameModeBase::DisplaySettingsMenuWidget()
 		SettingsWidget->AddToViewport();
 	}
 
-	PlayerController->SetPause(true);
 	FInputModeUIOnly InputMode;
 	InputMode.SetWidgetToFocus(SettingsWidget->TakeWidget());
 	PlayerController->SetInputMode(InputMode);

@@ -53,7 +53,7 @@ public:
     UFUNCTION(BlueprintCallable, Category = "UI")
     void SetVolumeValue(float NewVolume) { VolumeValue = NewVolume; }
     UPROPERTY(BlueprintReadOnly, Category = "UI")
-    float BrightnessValue = 1.0f;
+    float BrightnessValue = -2.0f;
     UFUNCTION(BlueprintCallable, Category = "UI")
     void SetBrightnessValue(float NewBrightness) { BrightnessValue = NewBrightness; }
     UFUNCTION(BlueprintImplementableEvent, Category = "UI")
